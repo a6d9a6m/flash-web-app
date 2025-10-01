@@ -2,53 +2,60 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_PATH = 'D:/CCY/Code/Python/mtFlaskapp/.venv/Scripts/python.exe'
+        // 假设 Jenkins 容器里已经装了 python3
+        PYTHON_PATH = 'python3'
     }
 
     stages {
         stage('Verify Python Path') {
             steps {
                 sh """
-                    @echo off
-                    echo "=== 验证Python313路径及版本 ==="
-                    ${PYTHON_PATH} --version  // 仅保留此关键验证（成功即证明路径正确）
-                    echo "Python路径验证通过！"
+                    echo "=== 验证 Python 路径及版本 ==="
+                    ${PYTHON_PATH} --version
+                    echo "Python 路径验证通过！"
                 """
             }
         }
+
         stage('Checkout') {
             steps {
                 git url: 'https://github.com/zhangping99/myflaskapp.git', branch: 'main'
             }
         }
+
         stage('Fix pip') {
             steps {
                 sh """
-                    @echo off
-                    echo "=== 修复Python313的pip环境 ==="
-                    ${PYTHON_PATH} -m ensurepip --upgrade
+                    echo "=== 修复 pip 环境 ==="
+                    ${PYTHON_PATH} -m ensurepip --upgrade || true
+                    ${PYTHON_PATH} -m pip install --upgrade pip
                     ${PYTHON_PATH} -m pip --version
                 """
             }
         }
+
         stage('Install Dependencies') {
             steps {
                 sh """
-                    @echo off
-                    ${PYTHON_PATH} -m pip install --upgrade pip
+                    echo "=== 安装依赖 ==="
                     ${PYTHON_PATH} -m pip install -r requirements.txt
                 """
             }
         }
+
         stage('Lint') {
             steps {
-                sh "${PYTHON_PATH} -m pip install flake8 && ${PYTHON_PATH} -m flake8 app.py tests/"
+                sh """
+                    ${PYTHON_PATH} -m pip install flake8
+                    ${PYTHON_PATH} -m flake8 app.py tests/
+                """
             }
         }
+
         stage('Test') {
             steps {
                 sh """
-                    ${PYTHON_PATH} -m pip install pytest
+                    ${PYTHON_PATH} -m pip install pytest pytest-cov
                     ${PYTHON_PATH} -m pytest --cov=app tests/ --cov-report=html
                 """
             }
@@ -65,21 +72,26 @@ pipeline {
                 }
             }
         }
+
         stage('Build') {
             steps {
                 sh """
                     ${PYTHON_PATH} -m pip install pyinstaller
-                    ${PYTHON_PATH} -m PyInstaller --onefile app.py
+                    ${PYTHON_PATH} -m pyinstaller --onefile app.py
                 """
             }
         }
+
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
-                sh "start ${PYTHON_PATH} app.py"  // 启动Flask应用（按需调整）
+                sh """
+                    nohup ${PYTHON_PATH} app.py > app.log 2>&1 &
+                """
             }
         }
     }
+
     post {
         success { echo 'CI/CD pipeline completed successfully!' }
         failure { echo 'CI/CD pipeline failed!' }
