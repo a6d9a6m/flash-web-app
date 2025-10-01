@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Verify Python Path') {
             steps {
-                bat """
+                sh """
                     @echo off
                     echo "=== 验证Python313路径及版本 ==="
                     ${PYTHON_PATH} --version  // 仅保留此关键验证（成功即证明路径正确）
@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Fix pip') {
             steps {
-                bat """
+                sh """
                     @echo off
                     echo "=== 修复Python313的pip环境 ==="
                     ${PYTHON_PATH} -m ensurepip --upgrade
@@ -33,7 +33,7 @@ pipeline {
         }
         stage('Install Dependencies') {
             steps {
-                bat """
+                sh """
                     @echo off
                     ${PYTHON_PATH} -m pip install --upgrade pip
                     ${PYTHON_PATH} -m pip install -r requirements.txt
@@ -42,12 +42,12 @@ pipeline {
         }
         stage('Lint') {
             steps {
-                bat "${PYTHON_PATH} -m pip install flake8 && ${PYTHON_PATH} -m flake8 app.py tests/"
+                sh "${PYTHON_PATH} -m pip install flake8 && ${PYTHON_PATH} -m flake8 app.py tests/"
             }
         }
         stage('Test') {
             steps {
-                bat """
+                sh """
                     ${PYTHON_PATH} -m pip install pytest
                     ${PYTHON_PATH} -m pytest --cov=app tests/ --cov-report=html
                 """
@@ -67,7 +67,7 @@ pipeline {
         }
         stage('Build') {
             steps {
-                bat """
+                sh """
                     ${PYTHON_PATH} -m pip install pyinstaller
                     ${PYTHON_PATH} -m PyInstaller --onefile app.py
                 """
@@ -76,7 +76,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
-                bat "start ${PYTHON_PATH} app.py"  // 启动Flask应用（按需调整）
+                sh "start ${PYTHON_PATH} app.py"  // 启动Flask应用（按需调整）
             }
         }
     }
