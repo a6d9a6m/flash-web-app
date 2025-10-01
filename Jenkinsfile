@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_PATH = 'D:\CCY\Code\Python\mtFlaskapp\.venv\Scripts\python.exe'
+        PYTHON_PATH = 'D:/CCY/Code/Python/mtFlaskapp/.venv/Scripts/python.exe'
     }
 
     stages {
