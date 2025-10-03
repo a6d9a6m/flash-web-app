@@ -2,11 +2,20 @@ pipeline {
     agent any
 
     environment {
-        // 假设 Jenkins 容器里已经装了 python3
         PYTHON_PATH = 'python3'
     }
 
     stages {
+        stage('Cleanup') {
+            steps {
+                sh """
+                    echo "=== 清理工作区和缓存 ==="
+                    rm -rf __pycache__ .pytest_cache htmlcov dist build *.spec
+                    ${PYTHON_PATH} -m pip cache purge || true
+                """
+            }
+        }
+
         stage('Verify Python Path') {
             steps {
                 sh """
@@ -28,7 +37,7 @@ pipeline {
                 sh """
                     echo "=== 修复 pip 环境 ==="
                     ${PYTHON_PATH} -m ensurepip --upgrade || true
-                    ${PYTHON_PATH} -m pip install --upgrade pip
+                    ${PYTHON_PATH} -m pip install --upgrade pip --break-system-packages
                     ${PYTHON_PATH} -m pip --version
                 """
             }
@@ -38,7 +47,7 @@ pipeline {
             steps {
                 sh """
                     echo "=== 安装依赖 ==="
-                    ${PYTHON_PATH} -m pip install -r requirements.txt
+                    ${PYTHON_PATH} -m pip install -r requirements.txt --break-system-packages
                 """
             }
         }
@@ -46,7 +55,7 @@ pipeline {
         stage('Lint') {
             steps {
                 sh """
-                    ${PYTHON_PATH} -m pip install flake8
+                    ${PYTHON_PATH} -m pip install flake8 --break-system-packages
                     ${PYTHON_PATH} -m flake8 app.py tests/
                 """
             }
@@ -55,7 +64,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh """
-                    ${PYTHON_PATH} -m pip install pytest pytest-cov
+                    ${PYTHON_PATH} -m pip install pytest pytest-cov --break-system-packages
                     ${PYTHON_PATH} -m pytest --cov=app tests/ --cov-report=html
                 """
             }
@@ -76,7 +85,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh """
-                    ${PYTHON_PATH} -m pip install pyinstaller
+                    ${PYTHON_PATH} -m pip install pyinstaller --break-system-packages
                     ${PYTHON_PATH} -m pyinstaller --onefile app.py
                 """
             }
