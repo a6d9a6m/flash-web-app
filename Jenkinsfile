@@ -85,6 +85,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh """
+                     export PATH=\$PATH:\$HOME/.local/bin
                     ${PYTHON_PATH} -m pip install pyinstaller --break-system-packages
                     ${PYTHON_PATH} -m pyinstaller --onefile app.py
                 """
